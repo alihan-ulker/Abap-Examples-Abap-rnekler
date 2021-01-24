@@ -1,0 +1,72 @@
+REPORT Z_TRY3.
+
+"Girilen 4 basamakli sayinin rakamlari toplamini hesaplama
+
+PARAMETERS sayi TYPE I.
+DATA: a TYPE I,
+      x TYPE I,
+      result TYPE I.
+DATA: c_01 TYPE p DECIMALS 3 VALUE '0.01',
+      c_02 TYPE p DECIMALS 2 VALUE '0.1'.
+WHILE a <> 4.
+x = sayi * c_01.
+"x = sayi * ( 10 / 100 ).
+sayi =  sayi / 10.
+result = + x.
+a = a + 1.
+ENDWHILE.
+WRITE: 'Rakamlarý Toplamý:', result.
+
+
+
+"ARMSTRONG sayi bulma
+
+PARAMETERS arms TYPE I.
+DATA: a TYPE I,
+      b TYPE I,
+      c TYPE I,
+      d TYPE I.
+
+WRITE '4 basamakli bir sayi giriniz.'.
+
+IF ( arms > 999 or arms < 10000 )
+  a = arms / 1000.
+  b = ( arms % 1000 ) / 100.
+  c = ( arms % 100 ) / 10.
+  d = arms % 10.
+  IF ( ( a * a * a * a ) + ( b * b * b * b ) + ( c * c * c * c ) + ( d * d * d * d )  == arms ).
+    WRITE 'ARMSTRONG bir sayidir.'.
+  ELSE.
+    WRITE 'ARMSTRONG bir sayi deðildir.'.
+  ENDIF.
+ENDIF.
+
+
+
+
+
+"ARMSTRONG sayi bulma
+
+PARAMETERS arms TYPE I.
+DATA: a TYPE I,
+      b TYPE I,
+      c TYPE I,
+      d TYPE I.
+
+DATA: c_01 TYPE p DECIMALS 4 VALUE '0.001',
+      c_02 TYPE p DECIMALS 3 VALUE '0.01',
+      c_03 TYPE p DECIMALS 2 VALUE '0.1'.
+
+WRITE: '4 basamakli bir sayi giriniz.'.
+
+IF ( arms > 999 or arms < 10000 ).
+  a = ( arms / 1000 ).
+  b = ( arms * c_01 ) / 100.
+  c = ( arms * c_02 ) / 10.
+  d = arms * c_03.
+  IF ( ( a * a * a * a ) + ( b * b * b * b ) + ( c * c * c * c ) + ( d * d * d * d ) = arms ).
+    WRITE 'ARMSTRONG bir sayidir.'.
+  ELSE.
+    WRITE 'ARMSTRONG bir sayi deðildir.'.
+  ENDIF.
+ENDIF.

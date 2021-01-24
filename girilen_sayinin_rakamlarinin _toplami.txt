@@ -1,0 +1,31 @@
+REPORT Z_TRY3.
+PARAMETERS sayi TYPE I.
+DATA: a TYPE I,
+      x TYPE I,
+      result TYPE I.
+
+WHILE a <> 4.
+
+"x = sayi Div 10.
+
+result =  x MOD 10.
+sayi = + sayi / 10.
+
+a = a + 1.
+ENDWHILE.
+WRITE: 'Rakamlarý Toplamý:', result.
+
+
+
+REPORT Z_TRY3.
+PARAMETERS sayi TYPE I.
+DATA: a TYPE I,
+      x TYPE I,
+      result TYPE I VALUE 0.
+WHILE a <> 4.
+x = sayi MOD 10.
+sayi =  sayi / 10.
+result = + x.
+"a = a + 1.
+ENDWHILE.
+WRITE: 'Rakamlarý Toplamý:', result.

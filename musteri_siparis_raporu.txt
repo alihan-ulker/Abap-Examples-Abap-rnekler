@@ -1,0 +1,370 @@
+REPORT Z_MUSTERI_SIPARIS_RAPORU .
+
+* Kullanacaðýmýz tablo
+TABLES: ZMUSTERI.
+TABLES: ZSIPARIS.
+TABLES: ZURUN.
+TABLES: somlreci1.
+
+* Alv için gerekli olan slis tip havuzu
+TYPE-POOLS: slis.
+
+TYPES: BEGIN OF t_zsiparis,
+  sel(1),
+  tutar TYPE zurun-BIRIM_FIYAT,
+  line_color(4) TYPE c,
+  END OF t_zsiparis.
+
+* Kullanacaðýmýz tablo tipinde itab tanýmlýyoruz
+DATA gt_fagl_trvor TYPE TABLE OF ZMUSTERI.
+DATA gt_fagl_trvor1 TYPE TABLE OF ZSIPARIS.
+DATA gt_fagl_trvor2 TYPE TABLE OF ZURUN.
+
+data:
+  begin of wa_SFLIGHT,
+*    carrid type sflight-carrid,
+*    connid type sflight-connid,
+*    FLDATE type sflight-FLDATE,
+*    PRICE type sflight-PRICE,
+    CURRENCY type sflight-CURRENCY,
+  end of wa_SFLIGHT,
+
+  it_sflight like STANDARD TABLE OF wa_sflight.
+  select * from SFLIGHT into corresponding fields of TABLE it_SFLIGHT.
+
+* Alv için kullanacaðýmýz layout ve fieldcatalog tanýmlarýný yapýyoruz
+DATA: fieldcatalog TYPE slis_t_fieldcat_alv WITH HEADER LINE,
+      gd_tab_group type slis_t_sp_group_alv,
+      gs_layout TYPE slis_layout_alv,
+      gt_fcat TYPE slis_t_fieldcat_alv,
+      gs_fcat TYPE slis_fieldcat_alv.
+     " it_sbook     TYPE TABLE OF sbook.
+
+DATA: gs_repid LIKE sy-repid.
+DATA: tutar TYPE mara-BRGEW.
+
+DATA: BEGIN OF gt_out OCCURS 0,
+      sel(1),
+      MUSTERI_AD like ZMUSTERI-MUSTERI_AD,
+      SIPARIS_TARIHI like ZSIPARIS-SIPARIS_TARIHI,
+      SIPARIS_SAATI like ZSIPARIS-SIPARIS_SAATI,
+      URUN_ID like ZURUN-URUN_ID,
+      MUSTERI_SOYAD LIKE ZMUSTERI-MUSTERI_SOYAD,
+      ADET LIKE ZSIPARIS-ADET,
+      URUN_ACIKLAMASI LIKE ZURUN-URUN_ACIKLAMASI,
+      BIRIM_FIYAT LIKE ZURUN-BIRIM_FIYAT,
+      TUTAR LIKE mara-BRGEW,
+      color TYPE lvc_t_scol,
+      CURRENCY TYPE sflight-CURRENCY,
+      toplam TYPE ZSIPARIS-TOPLAM,
+"para birimi
+  END OF gt_out.
+
+  data:gs_mail like gt_out.
+
+SELECTION-SCREEN BEGIN OF BLOCK p WITH FRAME.
+
+SELECT-OPTIONS: pa_ad for ZMUSTERI-MUSTERI_AD.
+SELECT-OPTIONS: pa_time for ZSIPARIS-SIPARIS_TARIHI.
+SELECT-OPTIONS: pa_clck for ZSIPARIS-SIPARIS_SAATI.
+SELECT-OPTIONS: pa_urun for ZURUN-URUN_ID.
+PARAMETERS: currency(5) TYPE c.
+
+SELECTION-SCREEN END OF BLOCK p.
+
+START-OF-SELECTION.
+
+  PERFORM read_data.
+  PERFORM build_fcat.
+  PERFORM build_layout.
+  PERFORM display_alv_report.
+ " PERFORM fill_fieldcat.
+
+FORM read_data.
+
+SELECT ZMUSTERI~MUSTERI_AD
+       ZMUSTERI~MUSTERI_SOYAD
+       ZSIPARIS~SIPARIS_TARIHI
+       ZSIPARIS~SIPARIS_SAATI
+       ZSIPARIS~ADET
+       ZSIPARIS~toplam
+       ZURUN~URUN_ID
+       ZURUN~URUN_ACIKLAMASI
+       ZURUN~BIRIM_FIYAT
+
+  INTO CORRESPONDING FIELDS OF TABLE gt_out FROM
+  ZMUSTERI INNER JOIN ZSIPARIS ON
+  ZMUSTERI~MUSTERI_ID = ZSIPARIS~MUSTERI_ID INNER JOIN
+  ZURUN ON ZURUN~URUN_ID = ZSIPARIS~URUN_ID
+  WHERE ZMUSTERI~MUSTERI_AD IN pa_ad
+  AND  ZSIPARIS~SIPARIS_TARIHI IN pa_time
+  AND   ZSIPARIS~SIPARIS_SAATI IN pa_clck
+  AND ZURUN~URUN_ID IN pa_urun.
+
+    LOOP AT gt_out.
+        gt_out-tutar = gt_out-ADET * gt_out-BIRIM_FIYAT.
+        modify gt_out.
+    ENDLOOP.
+ENDFORM.
+
+"SELECT * FROM sbook INTO TABLE it_sbook.
+
+FORM build_fcat.
+
+PERFORM appalv USING 'MUSTERI_AD' 'ZMUSTERI' 'MUSTERI ADI'.
+PERFORM appalv USING 'MUSTERI_SOYAD' 'ZMUSTERI' 'MUSTERI SOYADI'.
+PERFORM appalv USING 'SIPARIS_TARIHI' 'ZSIPARIS' 'SIPARIS TARIHI'.
+PERFORM appalv USING 'SIPARIS_SAATI' 'ZSIPARIS' 'SIPARIS SAATI'.
+PERFORM appalv USING 'ADET' 'ZSIPARIS' 'ADET'.
+PERFORM appalv USING 'URUN_ID' 'ZURUN' 'URUN TURU'.
+PERFORM appalv USING 'URUN_ACIKLAMASI' 'ZURUN' 'URUN ACIKLAMASI'.
+PERFORM appalv USING 'TUTAR' 'ZSIPARIS' 'TUTAR' .
+PERFORM appalv USING 'TOPLAM' 'ZSIPARIS' 'Para birimi' .
+
+
+ENDFORM.                    "build_fcat
+
+FORM appalv USING
+            p_fn
+            p_tn
+            p_txt.
+
+  CLEAR gs_fcat.
+  gs_fcat-fieldname = p_fn . "ITAB da tanýmladýðýmýz sütun adý
+  gs_fcat-tabname = p_tn . "ITAB adý
+  gs_fcat-seltext_m = p_txt . "ALV de görünecek sütun baþlýðý
+
+  APPEND gs_fcat TO gt_fcat.
+ENDFORM.                    "appalv
+
+FORM build_layout.
+  gs_layout-box_fieldname     = 'SEL'.
+  gs_layout-zebra             = 'X'.
+  gs_layout-no_input          = 'X'.
+  gs_layout-colwidth_optimize = 'X'.
+  gs_layout-totals_text       = 'Totals'(201).
+  gs_layout-coltab_fieldname = 'COLOR'.
+
+ENDFORM.                    "build_layout
+
+DATA: BEGIN OF t_zsiparis,
+  PRICE TYPE sflight-PRICE,
+  CURRENCY TYPE sflight-CURRENCY,
+  END OF t_zsiparis.
+
+FORM display_alv_report.
+
+  gs_repid = sy-repid.
+
+DATA: col TYPE lvc_s_scol,
+      coltab TYPE lvc_t_scol,
+      color TYPE lvc_s_colo.
+
+  LOOP AT gt_out.
+  IF gt_out-tutar < 50.
+    col-fname = 'TUTAR'.
+
+    color-col = '6'.
+    color-int = '0'.
+    color-inv = '0'.
+    col-color = color.
+    APPEND col TO coltab.
+    CLEAR col.
+    gt_out-color = coltab.
+
+  ELSEIF
+    gt_out-TUTAR > 50.
+    col-fname = 'TUTAR'.
+    color-col = '5'.
+    color-int = '0'.
+    color-inv = '0'.
+    col-color = color.
+    APPEND col TO coltab.
+    CLEAR col.
+    gt_out-color = coltab.
+
+  else.
+      gt_out-TUTAR = 50.
+      col-FNAME = 'TUTAR'.
+      color-COL = '7'.
+      color-int = '0'.
+      color-inv = '0'.
+      col-COLOR = color.
+    APPEND col TO coltab.
+    CLEAR col.
+    gt_out-color = coltab.
+
+  ENDIF.
+
+  MODIFY gt_out.
+  CLEAR coltab.
+  ENDLOOP.
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program = gs_repid
+      i_callback_pf_status_set = 'SET_PF_STATUS'
+      i_callback_user_command = 'USER_COMMAND'
+      I_STRUCTURE_NAME = 'GT_OUT'
+      IS_LAYOUT   = gs_layout
+      it_fieldcat = gt_fcat "fieldcatalog[]
+      i_save = 'X'
+    TABLES
+     T_OUTTAB   = gt_out[]
+    EXCEPTIONS
+      PROGRAM_ERROR = 1
+      OTHERS = 2.
+
+  IF sy-SUBRC <> 0.
+  ENDIF.
+
+ENDFORM.                    "display_data
+
+
+
+  CONSTANTS:
+    gc_subject TYPE so_obj_des VALUE 'Musteri Siparis Raporu',
+    gc_raw     TYPE char03 VALUE 'RAW'.
+
+  DATA:
+    gv_mlrec         TYPE so_obj_nam,
+    gv_sent_to_all   TYPE os_boolean,
+    gv_email         TYPE adr6-smtp_addr,
+    gv_subject       TYPE so_obj_des,
+    gv_text          TYPE bcsy_text,
+    gr_send_request  TYPE REF TO cl_bcs,
+    gr_bcs_exception TYPE REF TO cx_bcs,
+    gr_recipient     TYPE REF TO if_recipient_bcs,
+    gr_sender        TYPE REF TO cl_sapuser_bcs,
+    gr_document      TYPE REF TO cl_document_bcs.
+
+FORM USER_COMMAND USING u_ucomm LIKE sy-ucomm
+us_selfield TYPE slis_selfield.
+
+LOOP AT gt_out WHERE sel = 'X'.
+  MOVE-CORRESPONDING gt_out to gs_mail.
+ENDLOOP.
+
+IF sy-SUBRC eq 0.
+
+  CASE u_ucomm  .
+    WHEN '&MAIL'.
+ TRY.
+      "Create send request
+      gr_send_request = cl_bcs=>create_persistent( ).
+
+      "Email FROM...
+      gr_sender = cl_sapuser_bcs=>create( sy-uname ).
+      "Add sender to send request
+      CALL METHOD gr_send_request->set_sender
+        EXPORTING
+          i_sender = gr_sender.
+
+      "Email TO...
+      gv_email = 'aaulker@gmail.com.tr'.
+      gr_recipient = cl_cam_address_bcs=>create_internet_address( gv_email ).
+      "Add recipient to send request
+      CALL METHOD gr_send_request->add_recipient
+        EXPORTING
+          i_recipient = gr_recipient
+          i_express   = 'X'.
+
+      "Email BODY
+      data:lv_text(120) .
+      data:lv_text2(120).
+      data:lv_text3(120).
+      data:lv_saat(120) .
+      "DATA:lv_saat2 TYPE T.
+      DATA:lv_tarih TYPE String.
+      DATA:lv_urun(120).
+      data:lv_tutar TYPE String.
+      data:lv_parabirimi TYPE Currency.
+
+
+
+      lv_text = gs_mail-MUSTERI_AD.
+      lv_text2 = gs_mail-MUSTERI_SOYAD.
+      CONCATENATE 'Müþteri Adý - Soyadý:' lv_text lv_text2 INTO lv_text3 SEPARATED BY space.
+
+      lv_saat = gs_mail-SIPARIS_SAATI.
+      CONCATENATE 'Sipariþ Saati: ' lv_saat+0(2)
+                                    lv_saat+2(2)
+                                    lv_saat+4(2) INTO lv_saat SEPARATED BY ':'.
+
+
+      lv_tarih = gs_mail-SIPARIS_TARIHI.
+      CONCATENATE 'Sipariþ Tarihi: ' lv_tarih+0(4)
+                                     lv_tarih+4(2)
+                                     lv_tarih+6(2)  INTO lv_tarih SEPARATED BY '.'.
+
+      lv_urun = gs_mail-URUN_ACIKLAMASI.
+      CONCATENATE 'Sipariþ:' lv_urun INTO lv_urun SEPARATED BY space.
+
+      lv_parabirimi = gs_mail-TOPLAM.
+      lv_tutar = gs_mail-TUTAR.
+      CONCATENATE 'TUTAR:' lv_tutar lv_parabirimi INTO lv_tutar SEPARATED BY space.
+
+
+      APPEND lv_text3 TO gv_text.
+      APPEND lv_saat TO gv_text.
+      APPEND lv_tarih TO gv_text.
+      APPEND lv_urun TO gv_text.
+      APPEND lv_tutar TO gv_text.
+      APPEND ' ' TO gv_text.
+      APPEND ' ' TO gv_text.
+      APPEND 'Bizi tercih ettiðiniz için teþekkürler.' TO gv_text.
+
+*      data: datum(10) type c.
+*
+*     call function 'CONVERT_DATE_TO_EXTERNAL'
+*     exporting
+*          lv_tarih = sy-datum
+*     importing
+*          lv_tarih = datum.
+
+      gr_document = cl_document_bcs=>create_document(
+                      i_type    = gc_raw
+                      i_text    = gv_text
+                      i_length  = '12'
+                      i_subject = gc_subject ).
+      "Add document to send request
+      CALL METHOD gr_send_request->set_document( gr_document ).
+
+      "Send email
+      CALL METHOD gr_send_request->send(
+        EXPORTING
+          i_with_error_screen = 'X'
+        RECEIVING
+          result              = gv_sent_to_all ).
+      IF gv_sent_to_all = 'X'.
+        WRITE 'Email sent!'.
+      ENDIF.
+
+      "Commit to send email
+      COMMIT WORK.
+
+      "Exception handling
+    CATCH cx_bcs INTO gr_bcs_exception.
+      WRITE:
+        'Error!',
+        'Error type:',
+        gr_bcs_exception->error_type.
+  ENDTRY.
+
+      "mailde gözükecek
+      MESSAGE 'E-Mail Gönderildi!' TYPE 'S'.
+
+    WHEN OTHERS.
+  ENDCASE.
+
+  else.
+    MESSAGE 'Lütfen satýr seçiniz!' TYPE 'E'.
+ENDIF.
+
+ENDFORM. "
+FORM SET_PF_STATUS USING RT_EXTAB TYPE SLIS_T_EXTAB.
+
+*--Set the Modified PF status for the ALV.
+  SET PF-STATUS 'STATUS_01'.
+
+ENDFORM.                               " SET_PF_STATUS
