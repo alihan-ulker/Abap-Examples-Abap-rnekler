@@ -1,2 +1,2 @@
-# Abap-Examples-Abap-rnekler
+# Abap-Examples / Abap-Örnekler
 Abap Denemeleri
