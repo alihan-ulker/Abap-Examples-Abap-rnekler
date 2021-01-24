@@ -13,7 +13,7 @@ sayi = + sayi / 10.
 
 a = a + 1.
 ENDWHILE.
-WRITE: 'Rakamlarý Toplamý:', result.
+WRITE: 'Rakamlari Toplami:', result.
 
 
 
@@ -28,4 +28,4 @@ sayi =  sayi / 10.
 result = + x.
 "a = a + 1.
 ENDWHILE.
-WRITE: 'Rakamlarý Toplamý:', result.
+WRITE: 'Rakamlari Toplami:', result.
