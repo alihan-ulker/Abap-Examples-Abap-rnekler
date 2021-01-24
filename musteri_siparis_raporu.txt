@@ -1,12 +1,12 @@
 REPORT Z_MUSTERI_SIPARIS_RAPORU .
 
-* Kullanacaðýmýz tablo
+* Kullanacagimiz tablo
 TABLES: ZMUSTERI.
 TABLES: ZSIPARIS.
 TABLES: ZURUN.
 TABLES: somlreci1.
 
-* Alv için gerekli olan slis tip havuzu
+* Alv iÃ§in gerekli olan slis tip havuzu
 TYPE-POOLS: slis.
 
 TYPES: BEGIN OF t_zsiparis,
@@ -15,7 +15,7 @@ TYPES: BEGIN OF t_zsiparis,
   line_color(4) TYPE c,
   END OF t_zsiparis.
 
-* Kullanacaðýmýz tablo tipinde itab tanýmlýyoruz
+* Kullanacagimiz tablo tipinde itab tanimliyoruz
 DATA gt_fagl_trvor TYPE TABLE OF ZMUSTERI.
 DATA gt_fagl_trvor1 TYPE TABLE OF ZSIPARIS.
 DATA gt_fagl_trvor2 TYPE TABLE OF ZURUN.
@@ -32,7 +32,7 @@ data:
   it_sflight like STANDARD TABLE OF wa_sflight.
   select * from SFLIGHT into corresponding fields of TABLE it_SFLIGHT.
 
-* Alv için kullanacaðýmýz layout ve fieldcatalog tanýmlarýný yapýyoruz
+* Alv iÃ§in kullanacagimiz layout ve fieldcatalog tanimlarini yapiyoruz
 DATA: fieldcatalog TYPE slis_t_fieldcat_alv WITH HEADER LINE,
       gd_tab_group type slis_t_sp_group_alv,
       gs_layout TYPE slis_layout_alv,
@@ -130,9 +130,9 @@ FORM appalv USING
             p_txt.
 
   CLEAR gs_fcat.
-  gs_fcat-fieldname = p_fn . "ITAB da tanýmladýðýmýz sütun adý
-  gs_fcat-tabname = p_tn . "ITAB adý
-  gs_fcat-seltext_m = p_txt . "ALV de görünecek sütun baþlýðý
+  gs_fcat-fieldname = p_fn . "ITAB da tanimladigimiz sÃ¼tun adi
+  gs_fcat-tabname = p_tn . "ITAB adi
+  gs_fcat-seltext_m = p_txt . "ALV de gÃ¶rÃ¼necek sÃ¼tun basligi
 
   APPEND gs_fcat TO gt_fcat.
 ENDFORM.                    "appalv
@@ -284,21 +284,21 @@ IF sy-SUBRC eq 0.
 
       lv_text = gs_mail-MUSTERI_AD.
       lv_text2 = gs_mail-MUSTERI_SOYAD.
-      CONCATENATE 'Müþteri Adý - Soyadý:' lv_text lv_text2 INTO lv_text3 SEPARATED BY space.
+      CONCATENATE 'MÃ¼steri Adi - Soyadi:' lv_text lv_text2 INTO lv_text3 SEPARATED BY space.
 
       lv_saat = gs_mail-SIPARIS_SAATI.
-      CONCATENATE 'Sipariþ Saati: ' lv_saat+0(2)
+      CONCATENATE 'Siparis Saati: ' lv_saat+0(2)
                                     lv_saat+2(2)
                                     lv_saat+4(2) INTO lv_saat SEPARATED BY ':'.
 
 
       lv_tarih = gs_mail-SIPARIS_TARIHI.
-      CONCATENATE 'Sipariþ Tarihi: ' lv_tarih+0(4)
+      CONCATENATE 'Siparis Tarihi: ' lv_tarih+0(4)
                                      lv_tarih+4(2)
                                      lv_tarih+6(2)  INTO lv_tarih SEPARATED BY '.'.
 
       lv_urun = gs_mail-URUN_ACIKLAMASI.
-      CONCATENATE 'Sipariþ:' lv_urun INTO lv_urun SEPARATED BY space.
+      CONCATENATE 'Siparis:' lv_urun INTO lv_urun SEPARATED BY space.
 
       lv_parabirimi = gs_mail-TOPLAM.
       lv_tutar = gs_mail-TUTAR.
@@ -312,7 +312,7 @@ IF sy-SUBRC eq 0.
       APPEND lv_tutar TO gv_text.
       APPEND ' ' TO gv_text.
       APPEND ' ' TO gv_text.
-      APPEND 'Bizi tercih ettiðiniz için teþekkürler.' TO gv_text.
+      APPEND 'Bizi tercih ettiÃ°giniz iÃ§in tesekkÃ¼rler.' TO gv_text.
 
 *      data: datum(10) type c.
 *
@@ -351,14 +351,14 @@ IF sy-SUBRC eq 0.
         gr_bcs_exception->error_type.
   ENDTRY.
 
-      "mailde gözükecek
-      MESSAGE 'E-Mail Gönderildi!' TYPE 'S'.
+      "mailde gÃ¶zÃ¼kecek
+      MESSAGE 'E-Mail GÃ¶nderildi!' TYPE 'S'.
 
     WHEN OTHERS.
   ENDCASE.
 
   else.
-    MESSAGE 'Lütfen satýr seçiniz!' TYPE 'E'.
+    MESSAGE 'LÃ¼tfen satir seÃ§iniz!' TYPE 'E'.
 ENDIF.
 
 ENDFORM. "
